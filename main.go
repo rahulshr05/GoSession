@@ -4,12 +4,17 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/securecookie"
+	"golang.org/x/crypto/bcrypt"
 	"net/http"
 )
 
 var cookieHandler = securecookie.New(
 	securecookie.GenerateRandomKey(64),
 	securecookie.GenerateRandomKey(32))
+
+var validUsers = map[string]string {
+	"rahul" : "$2a$10$GXU2qljG16p1rIFWvE8x..kEidvvKIUYW0EwI0RNuqNnVXh1MNVMe",
+}
 
 func getUserName(request *http.Request) (userName string) {
 	if cookie, err := request.Cookie("session"); err == nil {
@@ -48,12 +53,13 @@ const internalPage = `
 func internalPageHandler(response http.ResponseWriter, request *http.Request) {
 	fmt.Println(request.Cookie)
 	name := getUserName(request)
-	if name != "" {
-		fmt.Fprintf(response, internalPage, name)
-	} else {
+	if name == "" {
 		http.Redirect(response, request, "/", 302)
+		//fmt.Fprintf(response, internalPage, name)
+	} else {
+	//fmt.Println("Flow reached here")
+		fmt.Fprintf(response, internalPage, name)
 	}
-
 }
 
 func loginHandler(response http.ResponseWriter, request *http.Request) {
@@ -63,8 +69,11 @@ func loginHandler(response http.ResponseWriter, request *http.Request) {
 	redirectTarget := "/"
 	if name != "" && pass != "" {
 		// .. check credentials ..
-		setSession(name, response)
-		redirectTarget = "/internal"
+		err := bcrypt.CompareHashAndPassword([]byte(validUsers[name]), []byte(pass))
+		if err == nil {
+			setSession(name, response)
+			redirectTarget = "/internal"
+		}
 	}
 	http.Redirect(response, request, redirectTarget, 302)
 }
