@@ -25,7 +25,7 @@ const indexPage = `
 <h1>Login</h1>
 <form method="post" action="/login">
     <label for="name">User name</label>
-    <input type="text" id="name" name="name">
+    <input type="text" id="userName" name="userName">
     <label for="password">Password</label>
     <input type="password" id="password" name="password">
     <button type="submit">Login</button>
@@ -46,12 +46,20 @@ const internalPage = `
 `
 
 func internalPageHandler(response http.ResponseWriter, request *http.Request) {
-	fmt.Fprintf(response, internalPage)
+	fmt.Println(request.Cookie)
+	name := getUserName(request)
+	if name != "" {
+		fmt.Fprintf(response, internalPage, name)
+	} else {
+		http.Redirect(response, request, "/", 302)
+	}
+
 }
 
 func loginHandler(response http.ResponseWriter, request *http.Request) {
-	name := request.FormValue("name")
+	name := request.FormValue("userName")
 	pass := request.FormValue("password")
+	fmt.Println(name)
 	redirectTarget := "/"
 	if name != "" && pass != "" {
 		// .. check credentials ..
